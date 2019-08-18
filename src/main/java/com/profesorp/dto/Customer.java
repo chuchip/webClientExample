@@ -1,4 +1,4 @@
-package com.profesorp.webclient.dto;
+package com.profesorp.dto;
 
 import lombok.Data;
 
