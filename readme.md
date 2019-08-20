@@ -5,3 +5,23 @@ La clase `WebServerApplication` ejecuta una nueva instancia de SpringBoot en el 
 	new SpringApplicationBuilder(WebServerApplication.class).
 				properties(Collections.singletonMap("server.port", "8081")).run(args);
 				
+
+Ejemplo de una llamada a la función `testURLs` de la clase `clientController`
+
+	$ curl  -s -XPOST http://localhost:8081/client  -H 'Content-Type: application/json' -d'{"aa": "bbx"}'
+	the server sayd: {aa=bbx}
+	Headers: content-length:12
+	Headers: aa:bbx
+	Headers: accept-encoding:gzip
+	Headers: Content-Type:application/json
+	Headers: accept:*/*
+	Headers: user-agent:ReactorNetty/0.9.0.M3
+	Headers: host:localhost:8080
+	
+Llamada a función `testGet`  de la clase `clientController`
+
+	$ curl  -s  http://localhost:8081/client/STOP
+	All OK. Seconds elapsed: 5.006
+	
+	
+	

@@ -1,78 +1,95 @@
 package com.profesorp.webclient.controller;
 
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
 
+import java.util.Map;
+
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientException;
 
-import com.profesorp.dto.Customer;
-
-import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @RestController()
-@RequestMapping("/client/")
+@RequestMapping("/client")
 @Slf4j
 public class ClientController {
-	final String urlServer="http://localhost:8081/server/";
+	final String urlServer="http://localhost:8080";
 	
-	@GetMapping("{param}")
+	@GetMapping("/{param}")
 	public Mono<ResponseEntity<Mono<String>>> testGet(@PathVariable String param) {
 		final long dateStarted = System.currentTimeMillis();
-		 
-		log.debug("Client: en testGest-1");
-		WebClient webClient= WebClient.create(urlServer);		
-		Mono<ClientResponse> respuesta=webClient.get().uri("?queryParam={name}", param)
-				.exchange();		
-		
+
+		log.debug("Client: In testGest");
+		WebClient webClient = WebClient.create(urlServer+"/server/");
+		Mono<ClientResponse> respuesta = webClient.get().uri("?queryParam={name}", param).exchange();
+
 		log.debug("Client: After calling the server");
-		
-		WebClient webClient2= WebClient.create(urlServer);
-		Mono<ClientResponse> respuesta1=webClient2.get().uri("?queryParam={name}", "STOP")
-				.exchange();	
+
+		WebClient webClient2 = WebClient.create(urlServer+"/server/");
+		Mono<ClientResponse> respuesta1 = webClient2.get().uri("?queryParam={name}", "STOP").exchange();
 		log.debug("llamada 2");
-		
-		log.debug("Client: Antes del zip");		
-				
-		
-		Mono<ResponseEntity<Mono<String>>> f1=Mono.zip(respuesta,respuesta1)
-				.map( t -> {
-					log.debug("Processing Map...");
-					if (!t.getT1().statusCode().is2xxSuccessful() )
-					{
-//						return "Error to read T1: Codigo HTTP: "+t.getT1().statusCode();
-						return ResponseEntity.status(t.getT1().statusCode()).body(t.getT1().bodyToMono(String.class));
-													
-					}
-					if (!t.getT2().statusCode().is2xxSuccessful() )
-					{
-//						return "Error to read T2: Codigo HTTP: "+t.getT1().statusCode();
-						return		ResponseEntity.status(t.getT2().statusCode()).body(t.getT2().bodyToMono(String.class));								
-					}
-					log.debug("Todo ok");
-					return ResponseEntity.ok().body(Mono.just("All OK. Seconds elapsed: "+ 
-					 (  ((double) (System.currentTimeMillis() - dateStarted)/ 1000) )));
-				});			
-		
-//		
-//		
+
+		log.debug("Client: Before zip");
+
+		Mono<ResponseEntity<Mono<String>>> f1 = Mono.zip(respuesta, respuesta1).map(t -> {
+			log.debug("Processing Map...");
+			if (!t.getT1().statusCode().is2xxSuccessful()) {
+				return ResponseEntity.status(t.getT1().statusCode()).body(t.getT1().bodyToMono(String.class));
+
+			}
+			if (!t.getT2().statusCode().is2xxSuccessful()) {
+				return ResponseEntity.status(t.getT2().statusCode()).body(t.getT2().bodyToMono(String.class));
+			}
+			log.debug("Allright");
+			return ResponseEntity.ok().body(Mono.just(
+					"All OK. Seconds elapsed: " + (((double) (System.currentTimeMillis() - dateStarted) / 1000))));
+		});
 		return f1;
 	}
 	
-	@Data
-	class MiEstado 
-	{
-		boolean finalizado1=false;
-		boolean finalizado2=false;
-		ResponseEntity<Mono<String>> responseEntity;
-	}
+	@PostMapping("")
+	public Mono<String> testURLs(@RequestBody Map<String,String> body,
+			@RequestParam(required = false) String url) {		
+
+		log.debug("Client: in testURLs");
+		WebClient.Builder builder = WebClient.builder().baseUrl(urlServer).
+			defaultHeader(HttpHeaders.CONTENT_TYPE,MediaType.APPLICATION_JSON_VALUE);
+		if (body!=null && body.size()>0 )
+		{
+			for (Map.Entry<String, String> map : body.entrySet() )
+			{
+				builder.defaultHeader(map.getKey(), map.getValue());
+			}
+		}
+		
+		WebClient webClient = builder.build();
+		
+		String urlFinal;
+		if (url==null)
+			urlFinal="/server/post";
+		else
+			urlFinal="/server/"+url;
+		Mono<String> respuesta1 = webClient.post().uri(urlFinal).body(body).exchange()
+			.flatMap( x -> 
+			{ 
+				if ( ! x.statusCode().is2xxSuccessful())
+					return 	Mono.just("LLamada a "+urlServer+urlFinal+" Error 4xx: "+x.statusCode()+"\n");
+				return x.bodyToMono(String.class);
+			});
+		    	
+		return respuesta1;
+		
+	}	
 }
