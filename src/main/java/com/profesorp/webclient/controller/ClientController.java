@@ -1,10 +1,11 @@
 package com.profesorp.webclient.controller;
 
 
+import java.awt.List;
+import java.util.Arrays;
 import java.util.Map;
 
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,18 +15,19 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientException;
 
 import lombok.extern.slf4j.Slf4j;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @RestController()
 @RequestMapping("/client")
 @Slf4j
 public class ClientController {
-	final String urlServer="http://localhost:8080";
+	final String urlServer="http://localhost:8081";
 	
 	@GetMapping("/{param}")
 	public Mono<ResponseEntity<Mono<String>>> testGet(@PathVariable String param) {
@@ -73,23 +75,22 @@ public class ClientController {
 				builder.defaultHeader(map.getKey(), map.getValue());
 			}
 		}
-		
-		WebClient webClient = builder.build();
-		
+	
+		WebClient webClient = builder.build();	
 		String urlFinal;
 		if (url==null)
 			urlFinal="/server/post";
 		else
 			urlFinal="/server/"+url;
-		Mono<String> respuesta1 = webClient.post().uri(urlFinal).body(body).exchange()
+		
+		BodyInserters.fromPublisher(Flux.just(Arrays.asList("aa","ss")),List.class);
+		Mono<String> respuesta1 = webClient.post().uri(urlFinal).body(BodyInserters.fromObject(body)).exchange()
 			.flatMap( x -> 
 			{ 
 				if ( ! x.statusCode().is2xxSuccessful())
-					return 	Mono.just("LLamada a "+urlServer+urlFinal+" Error 4xx: "+x.statusCode()+"\n");
+					return 	Mono.just(urlServer+urlFinal+" Called. Error 4xx: "+x.statusCode()+"\n");
 				return x.bodyToMono(String.class);
-			});
-		    	
-		return respuesta1;
-		
+			});		    	
+		return respuesta1;		
 	}	
 }

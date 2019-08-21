@@ -8,7 +8,7 @@ La clase `WebServerApplication` ejecuta una nueva instancia de SpringBoot en el 
 
 Ejemplo de una llamada a la función `testURLs` de la clase `clientController`
 
-	$ curl  -s -XPOST http://localhost:8081/client  -H 'Content-Type: application/json' -d'{"aa": "bbx"}'
+	$ curl  -s -XPOST http://localhost:8080/client  -H 'Content-Type: application/json' -d'{"aa": "bbx"}'
 	the server sayd: {aa=bbx}
 	Headers: content-length:12
 	Headers: aa:bbx
@@ -20,7 +20,7 @@ Ejemplo de una llamada a la función `testURLs` de la clase `clientController`
 	
 Llamada a función `testGet`  de la clase `clientController`
 
-	$ curl  -s  http://localhost:8081/client/STOP
+	$ curl  -s  http://localhost:8080/client/STOP
 	All OK. Seconds elapsed: 5.006
 	
 	
